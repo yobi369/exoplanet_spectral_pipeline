@@ -13,7 +13,6 @@ from typing import Mapping
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy import optimize
 
 FloatArray = NDArray[np.float64]
 BoolArray = NDArray[np.bool_]
@@ -28,34 +27,30 @@ def _validated_arrays(
     flux: NDArray[np.generic],
     uncertainty: NDArray[np.generic],
 ) -> tuple[FloatArray, FloatArray, FloatArray]:
-    arrays = tuple(np.asarray(a, dtype=float) for a in (wavelength, flux, uncertainty))
-    wave, signal, sigma = arrays
+    wave, signal, sigma = tuple(np.asarray(a, dtype=float) for a in (wavelength, flux, uncertainty))
     if wave.ndim != 1 or signal.ndim != 1 or sigma.ndim != 1:
         raise SpectrumInputError("wavelength, flux, and uncertainty must be one-dimensional.")
     if not (len(wave) == len(signal) == len(sigma)):
         raise SpectrumInputError("wavelength, flux, and uncertainty must have equal lengths.")
     if len(wave) < 5:
         raise SpectrumInputError("At least five spectral samples are required.")
-    if not all(np.all(np.isfinite(a)) for a in arrays):
+    if not all(np.all(np.isfinite(a)) for a in (wave, signal, sigma)):
         raise SpectrumInputError("Inputs must contain only finite values.")
     if np.any(np.diff(wave) <= 0):
         raise SpectrumInputError("Wavelengths must be strictly increasing with no duplicates.")
     if np.any(sigma <= 0):
         raise SpectrumInputError("Every uncertainty must be strictly positive.")
-    if np.allclose(signal, signal[0]):
-        # Constant flux is valid; it is not rejected. This check intentionally does nothing.
-        pass
     return wave, signal, sigma
 
 
 def flag_outliers(
-    flux: NDArray[np.generic], *, threshold: float = 6.0, window: int =  seven if False else  seven
+    flux: NDArray[np.generic], *, threshold: float = 6.0, window: int = 7
 ) -> BoolArray:
     """Flag isolated spikes using a local median and robust MAD scale.
 
     This function only flags points; it never silently removes or replaces measurements.
-    The window must be an odd integer >= 3. If local MAD is zero, a global robust
-    fallback is used. If no robust scale exists, no point is flagged.
+    The window must be an odd integer >= 3. If local MAD is zero, the numerical floor
+    is used so an isolated spike in an otherwise perfectly flat array can still be flagged.
     """
     values = np.asarray(flux, dtype=float)
     if values.ndim != 1 or len(values) < 3 or not np.all(np.isfinite(values)):
@@ -73,8 +68,9 @@ def flag_outliers(
         local_median[i] = np.median(local)
     residual = values - local_median
     mad = 1.4826 * np.median(np.abs(residual - np.median(residual)))
-    if not np.isfinite(mad) or mad <= np.finfo(float).eps * max(1.0, np.max(np.abs(values))):
-        return np.zeros(len(values), dtype=bool)
+    floor = np.finfo(float).eps * max(1.0, float(np.max(np.abs(values))))
+    if not np.isfinite(mad) or mad <= floor:
+        return np.abs(residual) > floor
     return np.abs(residual) > threshold * mad
 
 
@@ -115,6 +111,7 @@ class AnalysisResult:
     )
 
     def to_dict(self) -> dict[str, object]:
+        """Return a JSON-serializable representation."""
         return asdict(self)
 
 
@@ -159,8 +156,7 @@ def _fit_one_template(
     feature = np.asarray(template, dtype=float)
     if feature.shape != flux.shape or not np.all(np.isfinite(feature)):
         raise SpectrumInputError(f"Template {name!r} must be finite and match flux shape.")
-    # Fit constant + linear continuum under both null and template hypotheses.
-    scaled_wave = (wavelength - np.mean(wavelength)) / max(np.ptp(wavelength), 1.0)
+    scaled_wave = (wavelength - np.mean(wavelength)) / max(float(np.ptp(wavelength)), 1.0)
     baseline = np.column_stack((np.ones_like(scaled_wave), scaled_wave))
     full = np.column_stack((baseline, feature))
     weighted_y = flux / uncertainty
@@ -258,7 +254,6 @@ def make_synthetic_spectrum(
     wave = np.linspace(500.0, 2500.0, n_points)
     toy = illustrative_templates(wave)
     baseline = 1.0 + 0.01 * (wave - np.mean(wave)) / np.ptp(wave)
-    # Deliberately injected toy features; their labels are not physical detections.
     flux = baseline - 0.5 * toy["H2O_toy"] - 0.25 * toy["CO2_toy"]
     sigma = np.full_like(wave, noise_std)
     flux = flux + rng.normal(0.0, sigma)
