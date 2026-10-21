@@ -14,7 +14,7 @@ from exospec import (
 def test_synthetic_data_is_deterministic():
     first = make_synthetic_spectrum(seed=12)
     second = make_synthetic_spectrum(seed=12)
-    for left, right in zip(first, second):
+    for left, right in zip(first, second, strict=True):
         np.testing.assert_array_equal(left, right)
 
 
