@@ -21,6 +21,26 @@ The five rows above are **format-only example values**, not observed data. Use a
 
 This version assumes independent per-point uncertainties during fitting. It does not model covariance between spectral bins. If the source data has covariance information, preserve it separately and do not assume this tool accounts for it.
 
+## FITS binary-table input
+
+Install the optional astronomy dependency:
+
+```bash
+python -m pip install -e ".[astronomy]"
+```
+
+For a calibrated FITS product whose selected binary-table HDU contains one row per wavelength sample:
+
+```bash
+exospec analyze-fits jwst_x1d.fits --hdu 1 \
+  --wavelength-column WAVELENGTH --flux-column FLUX \
+  --uncertainty-column FLUX_ERROR --output results.json
+```
+
+Column names are matched case-insensitively. The HDU and columns are configurable because FITS products differ by instrument, pipeline, and product type. Only one-dimensional table columns are accepted; image HDUs, multi-order/multi-aperture arrays, missing columns, non-finite values, non-increasing wavelengths, and non-positive uncertainties are rejected rather than guessed or silently reshaped. Some products store uncertainty under another column name, such as `FLUX_ERR`; pass the actual name with `--uncertainty-column`.
+
+This is a reader, not an instrument pipeline: it does not perform extraction, wavelength calibration, flux calibration, background subtraction, quality masking, telluric correction, or unit conversion. Confirm that the selected product is already calibrated and that its uncertainty column is a one-sigma uncertainty in the flux units. The JSON report records the input format, selected HDU, and column mapping but cannot verify scientific provenance.
+
 ## Example
 
 ```bash
