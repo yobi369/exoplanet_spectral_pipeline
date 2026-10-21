@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the repository and the version/commit you used."
+title: "Exoplanet Spectral Pipeline"
+type: software
+authors:
+  - family-names: Mutunga
+    given-names: Brian
+    alias: yobi369
+repository-code: "https://github.com/yobi369/exoplanet_spectral_pipeline"
+license: MIT
+version: 0.2.0
+date-released: 2026-10-21
+abstract: "An auditable Python toolkit for spectrum input validation and exploratory uncertainty-weighted template fitting. Built-in templates are illustrative and are not physical atmosphere models."
+keywords:
+  - exoplanets
+  - spectroscopy
+  - scientific software
+  - reproducibility
