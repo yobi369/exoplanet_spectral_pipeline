@@ -9,7 +9,7 @@ from __future__ import annotations
 import csv
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Mapping
+from collections.abc import Mapping
 
 import numpy as np
 from numpy.typing import NDArray
