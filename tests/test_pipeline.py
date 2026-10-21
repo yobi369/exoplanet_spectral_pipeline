@@ -117,8 +117,8 @@ def test_cli_analyze_writes_json_report(tmp_path):
 
     csv_path = tmp_path / "spectrum.csv"
     csv_path.write_text(
-        "wavelength,flux,uncertainty\\n1,1.0,0.1\\n2,1.1,0.1\\n"
-        "3,0.9,0.1\\n4,1.0,0.1\\n5,1.0,0.1\\n",
+        "wavelength,flux,uncertainty\n1,1.0,0.1\n2,1.1,0.1\n"
+        "3,0.9,0.1\n4,1.0,0.1\n5,1.0,0.1\n",
         encoding="utf-8",
     )
     output_path = tmp_path / "nested" / "results.json"
