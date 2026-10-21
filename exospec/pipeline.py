@@ -7,9 +7,9 @@ No calibration or telluric correction is performed implicitly.
 from __future__ import annotations
 
 import csv
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from collections.abc import Mapping
 
 import numpy as np
 from numpy.typing import NDArray
