@@ -206,8 +206,28 @@ def analyze_spectrum(
         templates = illustrative_templates(wave)
     fits: dict[str, dict[str, object]] = {}
     for name, template in templates.items():
-        fit = _fit_one_template(wave, signal, sigma, str(name), template)
-        fits[str(name)] = asdict(fit)
+        feature = np.asarray(template, dtype=float)
+        if feature.shape != signal.shape or not np.all(np.isfinite(feature)):
+            raise SpectrumInputError(
+                f"Template {name!r} must be finite and match flux shape."
+            )
+        if np.max(np.abs(feature)) <= np.finfo(float).eps:
+            fits[str(name)] = {
+                "status": "skipped",
+                "reason": "Template has no support on this wavelength grid.",
+            }
+            continue
+        try:
+            fit = _fit_one_template(wave, signal, sigma, str(name), feature)
+        except SpectrumInputError as exc:
+            if "degenerate with the fitted continuum" not in str(exc):
+                raise
+            fits[str(name)] = {
+                "status": "skipped",
+                "reason": "Template is degenerate with the fitted continuum on this grid.",
+            }
+            continue
+        fits[str(name)] = {"status": "fit", **asdict(fit)}
     return AnalysisResult(
         n_points=len(wave),
         wavelength_min=float(wave[0]),
