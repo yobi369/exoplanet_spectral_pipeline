@@ -88,3 +88,45 @@ def test_csv_requires_uncertainties(tmp_path):
     path.write_text("wavelength,flux\n1,1\n2,1\n", encoding="utf-8")
     with pytest.raises(SpectrumInputError, match="uncertainty"):
         load_spectrum_csv(path)
+
+
+def test_cli_demo_writes_explicitly_synthetic_outputs(tmp_path):
+    from exospec.cli import main
+
+    import sys
+
+    previous = sys.argv
+    try:
+        sys.argv = ["exospec", "demo", "--output-dir", str(tmp_path), "--seed", "7"]
+        assert main() == 0
+    finally:
+        sys.argv = previous
+
+    csv_path = tmp_path / "synthetic_demo.csv"
+    report_path = tmp_path / "results.json"
+    assert csv_path.exists()
+    report = __import__("json").loads(report_path.read_text(encoding="utf-8"))
+    assert "SYNTHETIC DEMONSTRATION ONLY" in report["data_status"]
+    assert report["n_points"] == 1000
+
+
+def test_cli_analyze_writes_json_report(tmp_path):
+    from exospec.cli import main
+
+    import sys
+
+    csv_path = tmp_path / "spectrum.csv"
+    csv_path.write_text(
+        "wavelength,flux,uncertainty\\n1,1.0,0.1\\n2,1.1,0.1\\n"
+        "3,0.9,0.1\\n4,1.0,0.1\\n5,1.0,0.1\\n",
+        encoding="utf-8",
+    )
+    output_path = tmp_path / "nested" / "results.json"
+    previous = sys.argv
+    try:
+        sys.argv = ["exospec", "analyze", str(csv_path), "--output", str(output_path)]
+        assert main() == 0
+    finally:
+        sys.argv = previous
+    assert output_path.exists()
+    assert __import__("json").loads(output_path.read_text(encoding="utf-8"))["n_points"] == 5
