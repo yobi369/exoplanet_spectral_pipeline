@@ -17,6 +17,7 @@ __all__ = [
     "flag_outliers",
     "illustrative_templates",
     "load_spectrum_csv",
+    "load_spectrum_fits",
     "make_synthetic_spectrum",
 ]
 
