@@ -130,3 +130,12 @@ def test_cli_analyze_writes_json_report(tmp_path):
         sys.argv = previous
     assert output_path.exists()
     assert __import__("json").loads(output_path.read_text(encoding="utf-8"))["n_points"] == 5
+
+
+def test_analysis_skips_templates_outside_wavelength_coverage():
+    wave = np.linspace(1.0, 5.0, 20)
+    flux = np.ones_like(wave)
+    sigma = np.full_like(wave, 0.1)
+    result = analyze_spectrum(wave, flux, sigma)
+    assert result.fits["H2O_toy"]["status"] == "skipped"
+    assert "no support" in result.fits["H2O_toy"]["reason"]
