@@ -4,8 +4,6 @@ import sys
 import numpy as np
 import pytest
 
-from exospec.cli import main
-
 from exospec import (
     SpectrumInputError,
     analyze_spectrum,
@@ -14,6 +12,7 @@ from exospec import (
     load_spectrum_csv,
     make_synthetic_spectrum,
 )
+from exospec.cli import main
 
 
 def test_synthetic_data_is_deterministic():
@@ -126,7 +125,7 @@ def test_cli_analyze_writes_json_report(tmp_path):
     finally:
         sys.argv = previous
     assert output_path.exists()
-    assert __import__("json").loads(output_path.read_text(encoding="utf-8"))["n_points"] == 5
+    assert json.loads(output_path.read_text(encoding="utf-8"))["n_points"] == 5
 
 
 def test_analysis_skips_templates_outside_wavelength_coverage():
