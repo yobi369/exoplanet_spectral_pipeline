@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "exoplanet-spectral-pipeline"
-version = "0.2.0"
+version = "0.3.0"
 description = "Auditable exploratory spectral validation and uncertainty-weighted template fitting"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -17,6 +17,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7.4", "ruff>=0.4"]
+astronomy = ["astropy>=6.0"]
 
 [project.scripts]
 exospec = "exospec.cli:main"
