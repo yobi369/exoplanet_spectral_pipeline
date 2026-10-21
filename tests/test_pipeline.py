@@ -1,5 +1,10 @@
+import json
+import sys
+
 import numpy as np
 import pytest
+
+from exospec.cli import main
 
 from exospec import (
     SpectrumInputError,
@@ -91,10 +96,6 @@ def test_csv_requires_uncertainties(tmp_path):
 
 
 def test_cli_demo_writes_explicitly_synthetic_outputs(tmp_path):
-    from exospec.cli import main
-
-    import sys
-
     previous = sys.argv
     try:
         sys.argv = ["exospec", "demo", "--output-dir", str(tmp_path), "--seed", "7"]
@@ -105,16 +106,12 @@ def test_cli_demo_writes_explicitly_synthetic_outputs(tmp_path):
     csv_path = tmp_path / "synthetic_demo.csv"
     report_path = tmp_path / "results.json"
     assert csv_path.exists()
-    report = __import__("json").loads(report_path.read_text(encoding="utf-8"))
+    report = json.loads(report_path.read_text(encoding="utf-8"))
     assert "SYNTHETIC DEMONSTRATION ONLY" in report["data_status"]
     assert report["n_points"] == 1000
 
 
 def test_cli_analyze_writes_json_report(tmp_path):
-    from exospec.cli import main
-
-    import sys
-
     csv_path = tmp_path / "spectrum.csv"
     csv_path.write_text(
         "wavelength,flux,uncertainty\n1,1.0,0.1\n2,1.1,0.1\n"
