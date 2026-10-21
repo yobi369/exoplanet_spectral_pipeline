@@ -15,6 +15,7 @@ The pipeline deliberately does not invent instrument-response or telluric correc
 - Optional uncertainty-weighted template fitting with a linear continuum nuisance term.
 - Deterministic synthetic data generation for software tests and demonstrations.
 - CSV input and machine-readable JSON output.
+- A one-command deterministic demo that creates its own synthetic input and report.
 - Unit tests and GitHub Actions checks.
 
 ## Install
@@ -28,6 +29,16 @@ python -m pip install -e ".[dev]"
 pytest
 ```
 
+## Run a complete local demo
+
+This generates a seeded synthetic spectrum and a JSON analysis report without needing telescope data:
+
+```bash
+exospec demo --output-dir exospec-demo --seed 42
+```
+
+The output CSV is **synthetic software-test data**, not a real observation. The report labels it accordingly.
+
 ## Run on a CSV spectrum
 
 CSV must contain columns `wavelength`, `flux`, and `uncertainty`. Wavelength units and flux units must be consistent with your data source and documented in your analysis.
@@ -36,7 +47,7 @@ CSV must contain columns `wavelength`, `flux`, and `uncertainty`. Wavelength uni
 exospec analyze spectrum.csv --output results.json
 ```
 
-The JSON report includes input summary, flagged outliers, template-fit coefficients, and explicit limitations. It does not apply guessed calibration, denoising, or atmospheric corrections.
+The JSON report includes the input summary, flagged outliers, template-fit coefficients, and explicit limitations. User-supplied data provenance and calibration are not independently verified. The tool does not apply guessed calibration, denoising, or atmospheric corrections.
 
 ## Python API
 

@@ -1,3 +1,6 @@
+import json
+import sys
+
 import numpy as np
 import pytest
 
@@ -9,6 +12,7 @@ from exospec import (
     load_spectrum_csv,
     make_synthetic_spectrum,
 )
+from exospec.cli import main
 
 
 def test_synthetic_data_is_deterministic():
@@ -88,3 +92,46 @@ def test_csv_requires_uncertainties(tmp_path):
     path.write_text("wavelength,flux\n1,1\n2,1\n", encoding="utf-8")
     with pytest.raises(SpectrumInputError, match="uncertainty"):
         load_spectrum_csv(path)
+
+
+def test_cli_demo_writes_explicitly_synthetic_outputs(tmp_path):
+    previous = sys.argv
+    try:
+        sys.argv = ["exospec", "demo", "--output-dir", str(tmp_path), "--seed", "7"]
+        assert main() == 0
+    finally:
+        sys.argv = previous
+
+    csv_path = tmp_path / "synthetic_demo.csv"
+    report_path = tmp_path / "results.json"
+    assert csv_path.exists()
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert "SYNTHETIC DEMONSTRATION ONLY" in report["data_status"]
+    assert report["n_points"] == 1000
+
+
+def test_cli_analyze_writes_json_report(tmp_path):
+    csv_path = tmp_path / "spectrum.csv"
+    csv_path.write_text(
+        "wavelength,flux,uncertainty\n1,1.0,0.1\n2,1.1,0.1\n"
+        "3,0.9,0.1\n4,1.0,0.1\n5,1.0,0.1\n",
+        encoding="utf-8",
+    )
+    output_path = tmp_path / "nested" / "results.json"
+    previous = sys.argv
+    try:
+        sys.argv = ["exospec", "analyze", str(csv_path), "--output", str(output_path)]
+        assert main() == 0
+    finally:
+        sys.argv = previous
+    assert output_path.exists()
+    assert json.loads(output_path.read_text(encoding="utf-8"))["n_points"] == 5
+
+
+def test_analysis_skips_templates_outside_wavelength_coverage():
+    wave = np.linspace(1.0, 5.0, 20)
+    flux = np.ones_like(wave)
+    sigma = np.full_like(wave, 0.1)
+    result = analyze_spectrum(wave, flux, sigma)
+    assert result.fits["H2O_toy"]["status"] == "skipped"
+    assert "no support" in result.fits["H2O_toy"]["reason"]
