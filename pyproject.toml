@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "exoplanet-spectral-pipeline"
+version = "0.2.0"
+description = "Auditable exploratory spectral validation and uncertainty-weighted template fitting"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "yobi369" }]
+dependencies = [
+  "numpy>=1.24",
+  "scipy>=1.10"
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "ruff>=0.4"]
+
+[project.scripts]
+exospec = "exospec.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["exospec*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
