@@ -48,10 +48,18 @@ def main() -> int:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
     analyze = subparsers.add_parser("analyze", help="analyze a CSV spectrum")
-    analyze.add_argument(
-        "csv", type=Path, help="CSV with wavelength,flux,uncertainty columns"
-    )
+    analyze.add_argument("csv", type=Path, help="CSV with wavelength,flux,uncertainty columns")
     analyze.add_argument("--output", type=Path, help="write JSON report to this path")
+
+    fits_parser = subparsers.add_parser(
+        "analyze-fits", help="analyze a calibrated spectrum from a FITS binary table"
+    )
+    fits_parser.add_argument("fits", type=Path, help="path to the FITS file")
+    fits_parser.add_argument("--hdu", type=int, default=1, help="table HDU index (default: 1)")
+    fits_parser.add_argument("--wavelength-column", default="WAVELENGTH")
+    fits_parser.add_argument("--flux-column", default="FLUX")
+    fits_parser.add_argument("--uncertainty-column", default="FLUX_ERROR")
+    fits_parser.add_argument("--output", type=Path, help="write JSON report to this path")
 
     demo = subparsers.add_parser(
         "demo", help="generate reproducible synthetic data and analyze it"
@@ -62,6 +70,31 @@ def main() -> int:
     args = parser.parse_args()
     if args.command == "demo":
         _demo(args.output_dir, args.seed)
+        return 0
+    if args.command == "analyze-fits":
+        from .fits_io import load_spectrum_fits
+
+        wavelength, flux, uncertainty = load_spectrum_fits(
+            args.fits,
+            hdu=args.hdu,
+            wavelength_column=args.wavelength_column,
+            flux_column=args.flux_column,
+            uncertainty_column=args.uncertainty_column,
+        )
+        report = analyze_spectrum(wavelength, flux, uncertainty).to_dict()
+        report["input_file"] = args.fits.name
+        report["input_format"] = "FITS binary table"
+        report["fits_hdu"] = args.hdu
+        report["fits_columns"] = {
+            "wavelength": args.wavelength_column,
+            "flux": args.flux_column,
+            "uncertainty": args.uncertainty_column,
+        }
+        report["data_status"] = (
+            "USER-SUPPLIED FITS DATA; calibration, extraction, units, and provenance "
+            "were not independently verified."
+        )
+        _write_report(report, args.output)
         return 0
 
     wavelength, flux, uncertainty = load_spectrum_csv(args.csv)
