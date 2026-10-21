@@ -67,7 +67,9 @@ def main() -> int:
     wavelength, flux, uncertainty = load_spectrum_csv(args.csv)
     report = analyze_spectrum(wavelength, flux, uncertainty).to_dict()
     report["input_file"] = args.csv.name
-    report["data_status"] = "USER-SUPPLIED DATA; provenance and calibration were not independently verified."
+    report["data_status"] = (
+        "USER-SUPPLIED DATA; provenance and calibration were not independently verified."
+    )
     _write_report(report, args.output)
     return 0
 
